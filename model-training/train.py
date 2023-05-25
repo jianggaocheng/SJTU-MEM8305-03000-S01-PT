@@ -26,20 +26,6 @@ root_dir = Path("./data")
 fire_dir = Path("./data/fire_images")
 non_fire_dir = Path("./data/non_fire_images")
 
-# Get all image paths from the fire file (* means "any combination")
-fire_image_list = list(fire_dir.glob("*.*.png"))
-
-# Transforms.Compose allows us to package all of the transformations we want to perform on the image
-data_transform = transforms.Compose([
-    # Resize the images to 128x128
-    transforms.Resize(size=(128, 128)),
-    # Randomly pick a transformation with a random magnitude and apply one transformation to one image
-    transforms.TrivialAugmentWide(num_magnitude_bins=31),
-    # Turn the image into a torch.Tensor and also converts all pixel values from 0 to 255 to be between 0.0 and 1.0 
-    transforms.ToTensor() 
-])
-
-
 # You can also apply data transformation using the `transforms` parameter here
 fire_dataset = ImageFolder(root_dir)
 
@@ -77,14 +63,14 @@ def train_per_epoch(model, train_dataloader, test_dataloader, loss_fn, optimizer
 
         # Make prediction
         y_logits = model(X)
-        y_pred = torch.round(torch.sigmoid(y_logits))
+        y_pred = 1 - torch.round(torch.sigmoid(y_logits))
 
         # Calculate and accumulate loss
         loss = loss_fn(y_logits, y)
         train_loss += loss.item()
 
         # Calculate and accumulate accuracy
-        acc = (y_pred == y).sum().item() / len(y)
+        acc = (y_pred == 1 - y).sum().item() / len(y)  # Reverse the label for accuracy calculation
         train_acc += acc
 
         # Update parameters
@@ -105,13 +91,13 @@ def train_per_epoch(model, train_dataloader, test_dataloader, loss_fn, optimizer
             X, y = X.to(device), torch.unsqueeze(y, dim=1).float().to(device)
 
             test_logits = model(X)
-            test_pred = torch.round(torch.sigmoid(test_logits))
+            test_pred = 1 - torch.round(torch.sigmoid(test_logits))
 
             loss = loss_fn(test_logits, y)
             test_loss += loss.item()
 
             # Calculate and accumulate accuracy
-            acc = (test_pred == y).sum().item() / len(y)
+            acc = (test_pred == 1 - y).sum().item() / len(y)  # Reverse the label for accuracy calculation
             test_acc += acc
 
     # Calculate the average loss and average accuracy by batch (in one epoch)
@@ -121,10 +107,11 @@ def train_per_epoch(model, train_dataloader, test_dataloader, loss_fn, optimizer
 
 # Setup ModelCheckpoint
 def checkpoint(model, filename):
-    torch.save(model.state_dict(), filename)
+    torch.save(model, filename)
     
-def resume(model, filename):
-    model.load_state_dict(torch.load(filename))
+def resume(filename):
+    model = torch.load(filename)
+    return model
 
 # Define train function
 def train(model, train_dataloader, test_dataloader, optimizer, loss_fn, epochs, best_model_path):
@@ -181,7 +168,7 @@ summary(model=model_tl, input_size=(32, 3, 384, 384))
 
 # Hyper-parameter adjustment and optimizer initialization
 batch_size = 32
-epochs_num = 50
+epochs_num = 30
 loss_fn = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(params=model_tl.parameters(), lr=0.0001)
 
