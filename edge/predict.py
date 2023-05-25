@@ -1,46 +1,28 @@
 import torch
-import torchvision.transforms as transforms
 from torchvision import models
-from torch.nn import Linear, Hardswish, Dropout
+from torchvision.transforms import ToTensor
 from PIL import Image
 import sys
 
-# Get a set of pretrained model weights
-weights = models.MobileNet_V3_Small_Weights.DEFAULT
+# We assume that the first argument is the image file and the second is the model file
+image_path = sys.argv[1]
+model_path = sys.argv[2]
 
-# Get the data transformations used to create our pretrained weights
-auto_transforms = weights.transforms()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def predict_image(image_path, model_path):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Load model
+model = torch.load(model_path)
+model = model.to(device)
+model.eval()
 
-    # Instantiate the model structure
-    model = torch.load(model_path)
-    model = model.to(device)
-    model.eval()
+# Open and preprocess image
+image = Image.open(image_path)
+transform = ToTensor()
+image = transform(image).unsqueeze(0).to(device)
 
-    # Open image
-    image = Image.open(image_path)
+# Predict
+with torch.no_grad():
+    output = model(image)
+    prob = torch.sigmoid(output).item()
 
-    # Convert images to RGB
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
-    
-    # Apply the transformations
-    image = auto_transforms(image).unsqueeze(0).to(device)
-
-    # Predict
-    with torch.no_grad():
-        output = torch.sigmoid(model(image)).item()
-    
-    return output
-
-if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python predict.py image_path model_path")
-        sys.exit()
-
-    image_path = sys.argv[1]
-    model_path = sys.argv[2]
-
-    print(predict_image(image_path, model_path))
+print(prob)

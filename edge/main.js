@@ -1,20 +1,26 @@
-const {PythonShell} = require('python-shell');
+const fireDetector = require('./fire-detector');
+const MqttDevice = require('./mqtt-device');
 
-let options = {
-    mode: 'text',
-    pythonOptions: ['-u'], // get print results in real-time
-    scriptPath: './', // path to your script
-    args: ['./fire.png', './best_model_tl.pth'] // your arguments
-};
+(async ()=> {    
+    // 创建设备实例，传入设备ID
+    const deviceID = 'test1';
+    const device = new MqttDevice(deviceID);
 
-PythonShell.run('predict.py', options, function (err, results) {
-    if (err) {
-        console.error('Python error: ', err);
-        throw err;
-    }
-    if (results && results.length > 0) {
-        console.log('Fire Probability: ', results[0]);
-    } else {
-        console.log('No result returned from python script');
-    }
-});
+    // 回调函数来获取设备信息和传感器数据
+    const getDeviceInfo = async () => {
+        return {
+            name: "device1",
+            "serialNumber": "123"
+        }
+    };
+
+    const getSensorData = async () => {
+        let value = await fireDetector.predict('./fire.png');
+        return {
+            "probability": value
+        }
+    };
+
+    // 启动设备连接和定时上报
+    device.start(getDeviceInfo, getSensorData);
+})();
