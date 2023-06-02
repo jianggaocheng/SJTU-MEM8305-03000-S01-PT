@@ -22,8 +22,9 @@ app.post('/predict', async (req, res) => {
   }
 
   let image = req.files.image;
-  let imagePath = __dirname + '/public/' + image.name;
-  let convertedImagePath = __dirname + '/public/converted_' + image.name;
+  let imageName = image.name;
+  let imagePath = __dirname + '/public/' + imageName;
+  let convertedImagePath = __dirname + '/public/converted_' + imageName;
 
   // Move the image to the server's public directory
   image.mv(imagePath, async function (err) {
@@ -55,17 +56,16 @@ app.post('/predict', async (req, res) => {
       // Predict the fire probability
       let probability = await fireDetector.predict(convertedImagePath);
 
-      // Remove the temporary converted image
-      fs.unlinkSync(convertedImagePath);
+      // Move the converted image back to the public directory
+      if (fs.existsSync(convertedImagePath)) {
+        fs.renameSync(convertedImagePath, imagePath);
+      }
 
       // Return the prediction result and image URL
       res.json({
         probability: probability,
-        imageUrl: '/'+ image.name
+        imageUrl: '/' + imageName
       });
-
-      // Remove the uploaded image
-      fs.unlinkSync(imagePath);
     } catch (error) {
       console.error(error);
       fs.unlinkSync(imagePath); // Remove the uploaded image
