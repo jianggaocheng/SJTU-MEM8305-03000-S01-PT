@@ -15,7 +15,7 @@ const MqttDevice = require('./mqtt-device');
     };
 
     const getSensorData = async () => {
-        let value = await fireDetector.predict('./fire.png');
+        let value = await fireDetector.predict('./fire2.jpg');
         return {
             "probability": value
         }

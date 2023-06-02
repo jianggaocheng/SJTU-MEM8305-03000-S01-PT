@@ -1,5 +1,6 @@
 const express = require('express');
 const sqlite3 = require('sqlite3');
+const path = require('path');
 const MqttConnector = require('./mqtt-connector');
 
 class Backend {
@@ -37,6 +38,10 @@ class Backend {
 
       res.json({ message: 'Command sent successfully' });
     });
+
+    // 托管前端页面
+    const publicPath = path.join(__dirname, 'public');
+    app.use(express.static(publicPath));
 
     app.listen(port, () => {
       console.log(`HTTP server started on port ${port}`);

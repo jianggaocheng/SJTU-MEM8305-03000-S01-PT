@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Alibaba Iconfont Font -->
+    <link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_2394850_dh9jltgy8ml.css">
+
+    <!-- Filepond CSS -->
+    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
+
+    <style>
+      body {
+        font-family: 'source-han-sans-simplified-c', sans-serif;
+      }
+      h1 {
+        color: #FF5722; /* Deep orange */
+      }
+    </style>
+
+    <title>Fire Detector</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto mt-5">
+          <div class="text-center mb-4">
+            <img src="1_forest.png" alt="Forest Image" style="width: 150px;">
+          </div>
+          <h1 class="text-center mb-4">Fire Detector</h1>
+
+          <form id="upload-form" enctype="multipart/form-data">
+            <!-- Replace your old input with Filepond -->
+            <input type="file" class="filepond" id="image" name="image" accept="image/*" required>
+          </form>
+
+          <img id="preview" src="" style="max-width: 100%; height: auto;" class="mt-3">
+
+          <div id="result" class="mt-3 card">
+            <div class="card-body">
+              <h5 class="card-title">Prediction Result</h5>
+              <p class="card-text" id="prediction">Awaiting prediction...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <!-- Filepond JS -->
+    <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
+    <script>
+      // Turn your input into a Filepond
+      const inputElement = document.querySelector('.filepond');
+      const pond = FilePond.create(inputElement, {
+        allowImagePreview: false,  // disable image preview in FilePond
+        server: {
+          url: '/predict',
+          process: {
+            method: 'POST',
+            onload: function(response) {
+              let data = JSON.parse(response);
+              $('#prediction').html(`Fire Probability: ${data.probability}`);
+            },
+            onerror: function() {
+              $('#prediction').html('Error predicting fire probability. Please try again.');
+            }
+          }
+        }
+      });
+
+      // Listen for the processfileprogress event and update the prediction text
+      pond.on('processfileprogress', function(file, progress) {
+        $('#prediction').html(`Uploading... ${Math.floor(progress * 100)}%`);
+      });
+
+      // Listen for the addfile event and display the file
+      pond.on('addfile', function(file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('preview').src = e.target.result;
+        }
+        reader.readAsDataURL(file.file);
+        pond.processFile(file.id);
+      });
+    </script>
+  </body>
+</html>

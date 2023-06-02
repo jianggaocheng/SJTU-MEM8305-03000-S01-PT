@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Device List</title>
+  <!-- 引入 Vuetify CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-container>
+        <v-card>
+          <v-card-title class="headline">Device List</v-card-title>
+          <v-card-text>
+            <v-data-table :headers="headers" :items="devices" item-key="deviceID">
+              <template v-slot:item.deviceID="{ item }">
+                <span class="device-id">{{ item.deviceID }}</span>
+              </template>
+              <template v-slot:item.lastConnectionTime="{ item }">
+                <span class="connection-time">{{ formatDateTime(item.lastConnectionTime) }}</span>
+              </template>
+              <template v-slot:item.sensorData="{ item }">
+                {{ formatSensorData(item.sensorData) }}
+              </template>
+            </v-data-table>
+          </v-card-text>
+        </v-card>
+      </v-container>
+    </v-app>
+  </div>
+
+  <!-- 引入 Vue.js -->
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <!-- 引入 Vuetify -->
+  <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+      data: {
+        headers: [
+          { text: 'Device ID', value: 'deviceID' },
+          { text: 'Last Connection Time', value: 'lastConnectionTime' },
+          { text: 'Sensor Data', value: 'sensorData' }
+        ],
+        devices: []
+      },
+      mounted() {
+        this.fetchDevices();
+      },
+      methods: {
+        fetchDevices() {
+          // 发起 HTTP 请求获取设备列表
+          axios.get('/devices')
+            .then(response => {
+              this.devices = response.data;
+            })
+            .catch(error => {
+              console.error('Failed to fetch devices:', error);
+            });
+        },
+        formatDateTime(dateTime) {
+          // 格式化日期时间
+          const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+          return new Date(dateTime).toLocaleDateString(undefined, options);
+        },
+        formatSensorData(sensorData) {
+          // 格式化传感器数据
+          if (typeof sensorData === 'object') {
+            return JSON.stringify(sensorData);
+          }
+          return sensorData;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
