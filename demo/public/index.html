@@ -52,10 +52,8 @@
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
-    <!-- Filepond JS -->
     <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
     <script>
-      // Turn your input into a Filepond
       const inputElement = document.querySelector('.filepond');
       const pond = FilePond.create(inputElement, {
         allowImagePreview: false,  // disable image preview in FilePond
@@ -66,6 +64,7 @@
             onload: function(response) {
               let data = JSON.parse(response);
               $('#prediction').html(`Fire Probability: ${data.probability}`);
+              $('#preview').attr('src', data.imageUrl);
             },
             onerror: function() {
               $('#prediction').html('Error predicting fire probability. Please try again.');
@@ -79,14 +78,9 @@
         $('#prediction').html(`Uploading... ${Math.floor(progress * 100)}%`);
       });
 
-      // Listen for the addfile event and display the file
+      // Listen for the addfile event and process the file
       pond.on('addfile', function(file) {
-        let reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('preview').src = e.target.result;
-        }
-        reader.readAsDataURL(file.file);
-        pond.processFile(file.id);
+        pond.processFile(file);
       });
     </script>
   </body>
